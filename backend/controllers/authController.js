@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import User from '../models/user.js';
 
 // Signup controller
 export const signup = async (req, res) => {
@@ -46,7 +46,7 @@ export const login = async (req, res) => {
 
     res.json({ 
       token, 
-      user: { id: user._id, name: user.name, email: user.email }
+      user: { id: user._id, name: user.name, email: user.email, role: user.role }
     });
   } catch (error) {
     console.error(error);

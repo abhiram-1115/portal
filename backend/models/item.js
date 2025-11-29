@@ -10,6 +10,8 @@ const itemSchema = new mongoose.Schema({
   category: { type: String, enum: ['lost', 'found'], required: true },
   status: { type: String, enum: ['pending', 'approved', 'claimed'], default: 'pending' },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  claimedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  claimedAt: { type: Date },
 }, { timestamps: true });
 
 const Item = mongoose.model('Item', itemSchema);
