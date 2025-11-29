@@ -1,12 +1,8 @@
 import React from 'react';
+import ItemsPage from '../components/ItemsPage';
 
 const LostItems = () => {
-  return (
-    <div>
-      <h1>Lost Items</h1>
-      <p>Browse items that have been reported as lost.</p>
-    </div>
-  );
+  return <ItemsPage defaultCategory="lost" />;
 };
 
 export default LostItems;

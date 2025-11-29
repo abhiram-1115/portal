@@ -1,12 +1,8 @@
 import React from 'react';
+import ItemsPage from '../components/ItemsPage';
 
 const FoundItems = () => {
-  return (
-    <div>
-      <h1>Found Items</h1>
-      <p>Browse items that have been reported as found.</p>
-    </div>
-  );
+  return <ItemsPage defaultCategory="found" />;
 };
 
 export default FoundItems;
