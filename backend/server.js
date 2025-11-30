@@ -31,10 +31,32 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
   ssl: true, 
-  tlsAllowInvalidCertificates: true
+  tlsAllowInvalidCertificates: true,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  family: 4, // Use IPv4 to avoid DNS issues
 })
   .then(() => console.log('MongoDB connected successfully!'))
-  .catch(err => console.error('MongoDB connection error:', err));
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    console.error('Make sure:');
+    console.error('1. Your MongoDB URI is correct in .env file');
+    console.error('2. Your IP address is whitelisted in MongoDB Atlas');
+    console.error('3. Your username and password are correct');
+  });
+
+// Handle connection events
+mongoose.connection.on('connected', () => {
+  console.log('Mongoose connected to MongoDB');
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('Mongoose disconnected from MongoDB');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('Mongoose connection error:', err);
+});
 
 // Ignore favicon requests
 app.get('/favicon.ico', (req, res) => res.status(204).end());

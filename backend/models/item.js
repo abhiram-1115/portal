@@ -1,14 +1,18 @@
 import mongoose from 'mongoose';
 
 const itemSchema = new mongoose.Schema({
-  imageUrl: { type: String, required: true },
+  name: { type: String, required: true },
   description: { type: String, required: true },
+  image: { type: String, required: true },
+  type: { type: String, enum: ['lost', 'found'], required: true },
+  category: { type: String },
+  location: { type: String },
+  date: { type: Date, default: Date.now },
   contactDetails: {
     email: { type: String, required: true },
-    // phone: { type: String }
   },
-  category: { type: String, enum: ['lost', 'found'], required: true },
-  status: { type: String, enum: ['pending', 'approved', 'claimed'], default: 'pending' },
+  status: { type: String, enum: ['pending', 'approved', 'claimed', 'rejected'], default: 'pending' },
+  rejectionReason: { type: String },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   claimedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   claimedAt: { type: Date },

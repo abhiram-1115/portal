@@ -3,7 +3,7 @@ import Item from '../models/item.js';
 // Add new item
   export async function addItem(req, res) {
     try {
-      const { description, contactDetails, category } = req.body;
+      const { name, description, type, category, location, contactDetails } = req.body;
       
       // Check if file was uploaded
       if (!req.file) {
@@ -13,16 +13,30 @@ import Item from '../models/item.js';
       // Get image URL from uploaded file
       const imageUrl = `/uploads/${req.file.filename}`;
 
+      // Parse contactDetails if it's a string
+      let parsedContactDetails = contactDetails;
+      if (typeof contactDetails === 'string') {
+        try {
+          parsedContactDetails = JSON.parse(contactDetails);
+        } catch (e) {
+          parsedContactDetails = { email: contactDetails };
+        }
+      }
+
       const newItem = new Item({
-        imageUrl,
+        name: name || 'Unnamed Item',
         description,
-        contactDetails: typeof contactDetails === 'string' ? JSON.parse(contactDetails) : contactDetails,
+        image: imageUrl,
+        type,
         category,
+        location,
+        contactDetails: parsedContactDetails,
+        status: 'pending',
         createdBy: req.user.id,
       });
 
       await newItem.save();
-      res.status(201).json({ message: 'Item submitted for approval' });
+      res.status(201).json({ message: 'Item added successfully', item: newItem });
     } catch (error) {
       console.error('Error adding item:', error);
       res.status(500).json({ message: 'Error adding item: ' + error.message });
@@ -61,6 +75,23 @@ export async function approveItem(req, res) {
     res.json({ message: 'Item approved' });
   } catch (error) {
     res.status(500).json({ message: 'Error approving item' });
+  }
+}
+
+// Reject an item
+export async function rejectItem(req, res) {
+  try {
+    const { reason } = req.body;
+    const item = await Item.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: 'Item not found' });
+
+    item.status = 'rejected';
+    item.rejectionReason = reason || 'Item does not meet guidelines';
+    await item.save();
+
+    res.json({ message: 'Item rejected' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error rejecting item' });
   }
 }
 
