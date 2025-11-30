@@ -8,8 +8,11 @@ const AddItem = () => {
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
-    category: 'lost',
+    name: '',
+    type: 'lost',
     description: '',
+    category: '',
+    location: '',
     email: '',
     image: null,
   });
@@ -85,8 +88,11 @@ const AddItem = () => {
       // Create FormData
       const submitData = new FormData();
       submitData.append('image', formData.image);
+      submitData.append('name', formData.name);
       submitData.append('description', formData.description);
+      submitData.append('type', formData.type);
       submitData.append('category', formData.category);
+      submitData.append('location', formData.location);
       submitData.append('contactDetails', JSON.stringify({
         email: formData.email,
       }));
@@ -95,8 +101,11 @@ const AddItem = () => {
       
       setSuccess(true);
       setFormData({
-        category: 'lost',
+        name: '',
+        type: 'lost',
         description: '',
+        category: '',
+        location: '',
         email: '',
         image: null,
       });
@@ -104,7 +113,7 @@ const AddItem = () => {
       
       // Redirect after 2 seconds
       setTimeout(() => {
-        navigate(`/${formData.category}-items`);
+        navigate(`/`);
       }, 2000);
     } catch (err) {
       setError(err.message || 'Failed to submit item. Please try again.');
@@ -121,7 +130,7 @@ const AddItem = () => {
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">
-          Report {formData.category === 'lost' ? 'Lost' : 'Found'} Item
+          Report {formData.type === 'lost' ? 'Lost' : 'Found'} Item
         </h1>
 
         {error && (
@@ -133,7 +142,7 @@ const AddItem = () => {
         {success && (
           <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
             <p className="font-medium">Item submitted successfully!</p>
-            <p className="text-sm">Your item is pending approval. Redirecting...</p>
+            <p className="text-sm">Your item is pending admin approval. You'll see it on the portal once approved.</p>
           </div>
         )}
 
@@ -147,9 +156,9 @@ const AddItem = () => {
               <label className="flex items-center">
                 <input
                   type="radio"
-                  name="category"
+                  name="type"
                   value="lost"
-                  checked={formData.category === 'lost'}
+                  checked={formData.type === 'lost'}
                   onChange={handleChange}
                   className="mr-2"
                 />
@@ -158,9 +167,9 @@ const AddItem = () => {
               <label className="flex items-center">
                 <input
                   type="radio"
-                  name="category"
+                  name="type"
                   value="found"
-                  checked={formData.category === 'found'}
+                  checked={formData.type === 'found'}
                   onChange={handleChange}
                   className="mr-2"
                 />
@@ -232,6 +241,55 @@ const AddItem = () => {
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Item Name */}
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+              Item Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="e.g., Black Backpack, Silver Watch"
+              required
+            />
+          </div>
+
+          {/* Category */}
+          <div>
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+              Category
+            </label>
+            <input
+              type="text"
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="e.g., Electronics, Clothing, Personal Items"
+            />
+          </div>
+
+          {/* Location */}
+          <div>
+            <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+              Location
+            </label>
+            <input
+              type="text"
+              id="location"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="e.g., Downtown, Campus Library, Main Street"
+            />
           </div>
 
           {/* Description */}

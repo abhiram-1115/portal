@@ -99,6 +99,13 @@ export const itemsAPI = {
     });
   },
 
+  rejectItem: async (itemId, reason) => {
+    return apiRequest(`/items/reject/${itemId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason }),
+    });
+  },
+
   deleteItem: async (itemId) => {
     return apiRequest(`/items/delete/${itemId}`, {
       method: 'DELETE',

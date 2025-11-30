@@ -10,6 +10,8 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('pending'); // pending, approved, claimed
+  const [rejectingId, setRejectingId] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -42,6 +44,19 @@ const AdminPanel = () => {
       setItems(items.map(item => 
         item._id === itemId ? { ...item, status: 'approved' } : item
       ));
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleReject = async (itemId) => {
+    try {
+      await itemsAPI.rejectItem(itemId, rejectReason);
+      setItems(items.map(item => 
+        item._id === itemId ? { ...item, status: 'rejected', rejectionReason: rejectReason } : item
+      ));
+      setRejectingId(null);
+      setRejectReason('');
     } catch (err) {
       setError(err.message);
     }
@@ -108,6 +123,16 @@ const AdminPanel = () => {
           >
             Claimed ({items.filter(i => i.status === 'claimed').length})
           </button>
+          <button
+            onClick={() => setFilter('rejected')}
+            className={`px-4 py-2 font-medium ${
+              filter === 'rejected'
+                ? 'border-b-2 border-red-600 text-red-600'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Rejected ({items.filter(i => i.status === 'rejected').length})
+          </button>
         </div>
 
         {loading ? (
@@ -126,14 +151,14 @@ const AdminPanel = () => {
                 className="bg-white rounded-lg shadow-md overflow-hidden"
               >
                 <div className="aspect-video bg-gray-200 overflow-hidden">
-                  {item.imageUrl ? (
+                  {item.image ? (
                     <img
-                      src={item.imageUrl.startsWith('http')
-                        ? item.imageUrl
-                        : item.imageUrl.startsWith('/')
-                        ? `http://localhost:5000${item.imageUrl}`
-                        : `http://localhost:5000/uploads/${item.imageUrl}`}
-                      alt={item.description}
+                      src={item.image.startsWith('http')
+                        ? item.image
+                        : item.image.startsWith('/')
+                        ? `http://localhost:5000${item.image}`
+                        : `http://localhost:5000${item.image}`}
+                      alt={item.name}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -147,39 +172,84 @@ const AdminPanel = () => {
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${
                       item.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                       item.status === 'approved' ? 'bg-green-100 text-green-800' :
-                      'bg-purple-100 text-purple-800'
+                      item.status === 'claimed' ? 'bg-purple-100 text-purple-800' :
+                      'bg-red-100 text-red-800'
                     }`}>
                       {item.status}
                     </span>
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                      item.category === 'lost' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                      item.type === 'lost' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
                     }`}>
-                      {item.category}
+                      {item.type}
                     </span>
                   </div>
-                  <p className="text-gray-800 mb-4 line-clamp-3">{item.description}</p>
+                  <h3 className="font-bold text-gray-900 mb-1">{item.name}</h3>
+                  <p className="text-gray-800 mb-2 line-clamp-2 text-sm">{item.description}</p>
+                  {item.category && <p className="text-xs text-gray-500 mb-1">Category: {item.category}</p>}
+                  {item.location && <p className="text-xs text-gray-500 mb-2">📍 {item.location}</p>}
                   <p className="text-sm text-gray-600 mb-4">{item.contactDetails?.email}</p>
-                  <div className="flex gap-2">
-                    {item.status === 'pending' && (
-                      <button
-                        onClick={() => handleApprove(item._id)}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm font-medium"
-                      >
-                        Approve
-                      </button>
-                    )}
-                    {item.status === 'claimed' && (
-                      <div className="flex-1 text-sm text-purple-600 font-medium">
-                        ✓ Claimed
+                  
+                  {item.status === 'rejected' && item.rejectionReason && (
+                    <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+                      <strong>Rejection reason:</strong> {item.rejectionReason}
+                    </div>
+                  )}
+
+                  {rejectingId === item._id ? (
+                    <div className="space-y-2">
+                      <textarea
+                        value={rejectReason}
+                        onChange={(e) => setRejectReason(e.target.value)}
+                        placeholder="Reason for rejection..."
+                        className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                        rows="2"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleReject(item._id)}
+                          className="flex-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium"
+                        >
+                          Confirm Reject
+                        </button>
+                        <button
+                          onClick={() => { setRejectingId(null); setRejectReason(''); }}
+                          className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-2 py-1 rounded text-xs font-medium"
+                        >
+                          Cancel
+                        </button>
                       </div>
-                    )}
-                    <button
-                      onClick={() => handleDelete(item._id)}
-                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium"
-                    >
-                      Delete
-                    </button>
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      {item.status === 'pending' && (
+                        <>
+                          <button
+                            onClick={() => handleApprove(item._id)}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm font-medium"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => setRejectingId(item._id)}
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium"
+                          >
+                            Reject
+                          </button>
+                        </>
+                      )}
+                      {item.status === 'claimed' && (
+                        <div className="flex-1 text-sm text-purple-600 font-medium text-center py-2">
+                          ✓ Claimed
+                        </div>
+                      )}
+                      <button
+                        onClick={() => handleDelete(item._id)}
+                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
                   {item.claimedAt && (
                     <p className="text-xs text-gray-500 mt-2">
                       Claimed on {new Date(item.claimedAt).toLocaleDateString()}

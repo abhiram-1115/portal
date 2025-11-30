@@ -11,6 +11,7 @@ const ItemsPage = ({ defaultCategory = 'lost' }) => {
   const [error, setError] = useState(null);
   const [claimingItem, setClaimingItem] = useState(null);
   const [showClaimed, setShowClaimed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchItems();
@@ -53,12 +54,22 @@ const ItemsPage = ({ defaultCategory = 'lost' }) => {
     }
   };
 
+  // Calculate counts
+  const lostItemsCount = items.filter(item => item.category === 'lost' && item.status === 'approved').length;
+  const foundItemsCount = items.filter(item => item.category === 'found' && item.status === 'approved').length;
+
   const filteredItems = items.filter(item => {
     const categoryMatch = item.category === category;
-    if (showClaimed) {
-      return categoryMatch && item.status === 'claimed';
-    }
-    return categoryMatch && item.status === 'approved';
+    const statusMatch = showClaimed 
+      ? item.status === 'claimed' 
+      : item.status === 'approved';
+    
+    // Search filter
+    const searchMatch = searchQuery === '' || 
+      item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.contactDetails?.email?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return categoryMatch && statusMatch && searchMatch;
   });
 
   const formatDate = (dateString) => {
@@ -71,69 +82,107 @@ const ItemsPage = ({ defaultCategory = 'lost' }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Lost & Found Portal
-          </h1>
-          
-          {/* Toggle Switch */}
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <span className={`text-lg font-medium ${category === 'lost' ? 'text-blue-600' : 'text-gray-500'}`}>
-              Lost Items
-            </span>
-            <button
-              onClick={() => setCategory(category === 'lost' ? 'found' : 'lost')}
-              className={`relative inline-flex h-8 w-16 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                category === 'found' ? 'bg-blue-600' : 'bg-gray-300'
-              }`}
-              aria-label="Toggle between lost and found items"
-            >
-              <span
-                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
-                  category === 'found' ? 'translate-x-9' : 'translate-x-1'
-                }`}
-              />
-            </button>
-            <span className={`text-lg font-medium ${category === 'found' ? 'text-blue-600' : 'text-gray-500'}`}>
-              Found Items
-            </span>
-          </div>
-
-          <p className="text-center text-gray-600 mb-4">
-            {category === 'lost' 
-              ? 'Browse items that have been reported as lost' 
-              : 'Browse items that have been reported as found'}
-          </p>
-          
-          <div className="flex justify-center items-center gap-4 mb-4">
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showClaimed}
-                onChange={(e) => setShowClaimed(e.target.checked)}
-                className="mr-2"
-              />
-              <span className="text-sm text-gray-700">Show claimed items</span>
-            </label>
-          </div>
-          
-          {isAuthenticated && (
-            <div className="text-center">
-              <Link
-                to="/add-item"
-                className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md shadow-sm transition-colors"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+    <div className="min-h-screen bg-gray-50">
+      {/* Blue Header Banner */}
+      <div className="bg-blue-600 text-white shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {/* Box Icon */}
+              <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
+                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
-                Report {category === 'lost' ? 'Lost' : 'Found'} Item
-              </Link>
+              </div>
+              <h1 className="text-4xl font-bold">Lost & Found</h1>
             </div>
-          )}
+            
+            {/* Count Indicators */}
+            <div className="flex items-center gap-4">
+              <div className="bg-blue-500 px-4 py-2 rounded-full flex items-center gap-2">
+                <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
+                <span className="font-medium">{lostItemsCount} Lost Items</span>
+              </div>
+              <div className="bg-blue-500 px-4 py-2 rounded-full flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                <span className="font-medium">{foundItemsCount} Found Items</span>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* Content Area */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative max-w-2xl mx-auto">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search items by name, category, or location..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
+            />
+          </div>
+        </div>
+
+        {/* Tab Buttons */}
+        <div className="flex justify-center gap-2 mb-8">
+          <button
+            onClick={() => setCategory('lost')}
+            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+              category === 'lost'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Lost Items ({lostItemsCount})
+          </button>
+          <button
+            onClick={() => setCategory('found')}
+            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+              category === 'found'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Found Items ({foundItemsCount})
+          </button>
+        </div>
+
+        {/* Show Claimed Toggle */}
+        <div className="flex justify-center items-center gap-4 mb-6">
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showClaimed}
+              onChange={(e) => setShowClaimed(e.target.checked)}
+              className="mr-2"
+            />
+            <span className="text-sm text-gray-700">Show claimed items</span>
+          </label>
+        </div>
+
+        {/* Add Item Button */}
+        {isAuthenticated && (
+          <div className="text-center mb-6">
+            <Link
+              to="/add-item"
+              className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md shadow-sm transition-colors"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Report {category === 'lost' ? 'Lost' : 'Found'} Item
+            </Link>
+          </div>
+        )}
 
         {/* Loading State */}
         {loading && (
