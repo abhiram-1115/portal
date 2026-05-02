@@ -134,3 +134,207 @@ export async function deleteItem(req, res) {
     res.status(500).json({ message: 'Error deleting item' });
   }
 }
+
+/**
+ * POST /api/items/:id/claim
+ * body: { message?: string }
+ */
+const requestClaim = async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: "Item not found" });
+
+    const requesterId = getAuthUserId(req);
+    const ownerId = getOwnerId(item);
+
+    if (ownerId && ownerId === requesterId) {
+      return res.status(400).json({ message: "Owner cannot claim own item" });
+    }
+
+    if (item.claim?.status === "pending") {
+      return res.status(409).json({ message: "A claim is already pending" });
+    }
+
+    if (item.claim?.status === "approved") {
+      return res.status(409).json({ message: "Item is already claimed" });
+    }
+
+    item.claim = {
+      status: "pending",
+      requestedBy: requesterId,
+      message: (req.body?.message || "").trim(),
+      requestedAt: new Date(),
+      reviewedBy: null,
+      reviewedAt: null,
+    };
+
+    await item.save();
+    return res.status(201).json({ message: "Claim request submitted", claim: item.claim });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to request claim", error: error.message });
+  }
+};
+
+/**
+ * PATCH /api/items/:id/claim/review
+ * body: { decision: "approve" | "reject" }
+ * Allowed: admin or item owner
+ */
+const reviewClaim = async (req, res) => {
+  try {
+    const { decision } = req.body || {};
+    if (!["approve", "reject"].includes(decision)) {
+      return res.status(400).json({ message: "Decision must be 'approve' or 'reject'" });
+    }
+
+    const item = await Item.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: "Item not found" });
+
+    if (item.claim?.status !== "pending") {
+      return res.status(400).json({ message: "No pending claim to review" });
+    }
+
+    const reviewerId = getAuthUserId(req);
+    const ownerId = getOwnerId(item);
+    const isAdmin = !!req.user?.isAdmin;
+
+    if (!isAdmin && (!ownerId || ownerId !== reviewerId)) {
+      return res.status(403).json({ message: "Not authorized to review this claim" });
+    }
+
+    item.claim.status = decision === "approve" ? "approved" : "rejected";
+    item.claim.reviewedBy = reviewerId;
+    item.claim.reviewedAt = new Date();
+
+    await item.save();
+    return res.json({ message: `Claim ${item.claim.status}`, claim: item.claim });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to review claim", error: error.message });
+  }
+};
+
+/**
+ * GET /api/items/claims/pending
+ * Allowed: admin only
+ */
+const getPendingClaims = async (req, res) => {
+  try {
+    if (!req.user?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const items = await Item.find({ "claim.status": "pending" })
+      .populate("claim.requestedBy", "name email")
+      .sort({ "claim.requestedAt": -1 });
+
+    return res.json(items);
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to fetch pending claims", error: error.message });
+  }
+};
+
+const getAuthUserId = (req) => String(req.user?._id || req.user?.id || "");
+const getOwnerId = (item) =>
+  String(item.user || item.createdBy || item.reportedBy || "");
+
+// rename these NEW handlers only (keep any older requestClaim handler untouched)
+export const requestItemClaim = async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: "Item not found" });
+
+    const requesterId = String(req.user?._id || req.user?.id || "");
+    const ownerId = String(item.user || item.createdBy || item.reportedBy || "");
+
+    if (ownerId && ownerId === requesterId) {
+      return res.status(400).json({ message: "Owner cannot claim own item" });
+    }
+
+    if (item.claim?.status === "pending") {
+      return res.status(409).json({ message: "A claim is already pending" });
+    }
+
+    if (item.claim?.status === "approved") {
+      return res.status(409).json({ message: "Item is already claimed" });
+    }
+
+    item.claim = {
+      status: "pending",
+      requestedBy: requesterId,
+      message: (req.body?.message || "").trim(),
+      requestedAt: new Date(),
+      reviewedBy: null,
+      reviewedAt: null,
+    };
+
+    await item.save();
+    return res.status(201).json({ message: "Claim request submitted", claim: item.claim });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to request claim", error: error.message });
+  }
+};
+
+export const reviewItemClaim = async (req, res) => {
+  try {
+    const { decision } = req.body || {};
+    if (!["approve", "reject"].includes(decision)) {
+      return res.status(400).json({ message: "Decision must be 'approve' or 'reject'" });
+    }
+
+    const item = await Item.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: "Item not found" });
+    if (item.claim?.status !== "pending") {
+      return res.status(400).json({ message: "No pending claim to review" });
+    }
+
+    const reviewerId = String(req.user?._id || req.user?.id || "");
+    const ownerId = String(item.user || item.createdBy || item.reportedBy || "");
+    const isAdmin = !!req.user?.isAdmin;
+
+    if (!isAdmin && (!ownerId || ownerId !== reviewerId)) {
+      return res.status(403).json({ message: "Not authorized to review this claim" });
+    }
+
+    item.claim.status = decision === "approve" ? "approved" : "rejected";
+    item.claim.reviewedBy = reviewerId;
+    item.claim.reviewedAt = new Date();
+
+    await item.save();
+    return res.json({ message: `Claim ${item.claim.status}`, claim: item.claim });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to review claim", error: error.message });
+  }
+};
+
+export const getPendingItemClaims = async (req, res) => {
+  try {
+    if (!req.user?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const items = await Item.find({ "claim.status": "pending" })
+      .populate("claim.requestedBy", "name email")
+      .sort({ "claim.requestedAt": -1 });
+
+    return res.json(items);
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to fetch pending claims", error: error.message });
+  }
+};
+
+export const getItemById = async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id).populate("claim.requestedBy", "name email");
+    if (!item) return res.status(404).json({ message: "Item not found" });
+
+    // Public can only view approved items; admin can view any
+    const isAdmin = !!req.user?.isAdmin;
+    if (item.status !== "approved" && !isAdmin) {
+      return res.status(403).json({ message: "Not authorized to view this item" });
+    }
+
+    return res.json(item);
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to fetch item", error: error.message });
+  }
+};

@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const itemSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -16,8 +16,38 @@ const itemSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   claimedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   claimedAt: { type: Date },
+  claim: {
+    status: {
+      type: String,
+      enum: ["none", "pending", "approved", "rejected"],
+      default: "none",
+    },
+    requestedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    message: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      default: "",
+    },
+    requestedAt: {
+      type: Date,
+      default: null,
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    reviewedAt: {
+      type: Date,
+      default: null,
+    },
+  },
 }, { timestamps: true });
 
-const Item = mongoose.model('Item', itemSchema);
+const Item = mongoose.models.Item || mongoose.model("Item", itemSchema);
 export default Item;
-                
