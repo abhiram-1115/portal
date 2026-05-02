@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import LostItems from "./pages/LostItems";
@@ -7,6 +7,7 @@ import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import AddItem from "./pages/AddItem";
 import AdminPanel from "./pages/AdminPanel";
+import ItemDetails from "./pages/ItemDetails";
 
 function App() {
   console.log('App component rendering');
@@ -21,6 +22,7 @@ function App() {
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/items/:id" element={<ItemDetails />} />
       </Routes>
     </div>
   );

@@ -111,6 +111,30 @@ export const itemsAPI = {
       method: 'DELETE',
     });
   },
+
+  getPendingClaims: async () => {
+    const response = await api.get('/items/claims/pending');
+    return response.data;
+  },
+
+  reviewClaim: async (itemId, decision) => {
+    const response = await api.patch(`/items/${itemId}/claim/review`, { decision });
+    return response.data;
+  },
+
+  getItemById: async (id) => {
+    const response = await api.get(`/items/${id}`);
+    return response.data;
+  },
 };
+
+export const requestClaim = (itemId, message = "") =>
+  api.post(`/items/${itemId}/claim`, { message });
+
+export const getPendingClaims = () =>
+  api.get("/items/claims/pending");
+
+export const reviewClaim = (itemId, decision) =>
+  api.patch(`/items/${itemId}/claim/review`, { decision });
 
 export default { authAPI, itemsAPI };

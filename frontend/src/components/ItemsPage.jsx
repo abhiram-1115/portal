@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { itemsAPI } from '../services/api';
+import ClaimActions from "./ClaimActions";
+import { useNavigate } from "react-router-dom";
 
 const ItemsPage = ({ defaultCategory = 'lost' }) => {
   const { isAuthenticated } = useAuth();
@@ -22,6 +24,11 @@ const ItemsPage = ({ defaultCategory = 'lost' }) => {
       setLoading(true);
       setError(null);
       const data = await itemsAPI.getItems();
+
+
+
+
+      
       setItems(data);
     } catch (err) {
       setError(err.message);
@@ -80,6 +87,8 @@ const ItemsPage = ({ defaultCategory = 'lost' }) => {
       day: 'numeric' 
     });
   };
+
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -221,9 +230,10 @@ const ItemsPage = ({ defaultCategory = 'lost' }) => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredItems.map((item) => (
-                  <div
+                  <article
                     key={item._id}
-                    className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                    onClick={() => navigate(`/items/${item._id}`)}
+                    className="cursor-pointer rounded-xl border border-gray-200 bg-white p-4 hover:shadow-md"
                   >
                     {/* Item Image */}
                     <div className="aspect-video bg-gray-200 overflow-hidden">
@@ -334,7 +344,7 @@ const ItemsPage = ({ defaultCategory = 'lost' }) => {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </article>
                 ))}
               </div>
             )}
